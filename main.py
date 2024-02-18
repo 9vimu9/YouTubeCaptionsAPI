@@ -3,6 +3,7 @@ import math
 from fastapi import FastAPI, Response, status
 from youtube_transcript_api import YouTubeTranscriptApi, TranscriptsDisabled
 from fastapi.middleware.cors import CORSMiddleware
+from exceptions import EnglishCaptionsAreNotAvailable
 
 app = FastAPI()
 app.add_middleware(
@@ -17,7 +18,7 @@ app.add_middleware(
 @app.get("/captions/{video_id}")
 async def get_caption(video_id: str, response: Response):
     try:
-        transcript = YouTubeTranscriptApi.get_transcript(video_id)
+        transcript = get_transcript(video_id)
         captions = []
         for caption in transcript:
             end = caption['start'] + caption['duration']
@@ -37,3 +38,12 @@ async def get_caption(video_id: str, response: Response):
 def round_half_up(n, decimals=0):
     multiplier = 10 ** decimals
     return math.floor(n * multiplier + 0.5) / multiplier
+
+
+def get_transcript(video_id):
+    transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
+    for transcript in transcript_list:
+        language_code = transcript.language_code
+        if language_code == 'en' or language_code.startswith('en-'):
+            return transcript.fetch()
+    raise EnglishCaptionsAreNotAvailable.EnglishCaptionsAreNotAvailable()
