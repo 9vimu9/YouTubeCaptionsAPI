@@ -20,10 +20,13 @@ async def get_caption(video_id: str, response: Response):
     try:
         transcript = get_transcript(video_id)
         captions = []
-        for caption in transcript:
+        for index, caption in enumerate(transcript):
             end = caption['start'] + caption['duration']
+            next_caption_index = None if len(transcript) - 1 == index else index + 1
             captions.append(
                 {
+                    "index": index,
+                    "next_caption_index": next_caption_index,
                     "text": caption['text'],
                     "start": round_half_up(caption['start'] * 10) * 100,
                     "end": round_half_up(end * 10) * 100
